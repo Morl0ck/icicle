@@ -63,11 +63,11 @@ local function addIcons(enemyName, plateFrame)
 	for ind = 1, #cdCache[enemyName] do
 		cdCache[enemyName][ind]:ClearAllPoints()
 		--// Fix for tidyplates alpha.
-		if IsAddOnLoaded("TidyPlates") then
-			cdCache[enemyName][ind]:SetParent(select(3, plateFrame:GetChildren()))
-		else
+		--if IsAddOnLoaded("TidyPlates") then
+		--	cdCache[enemyName][ind]:SetParent(select(3, plateFrame:GetChildren()))
+		--else
 			cdCache[enemyName][ind]:SetParent(plateFrame)
-		end
+		--end
 		cdCache[enemyName][ind]:Show()
 		if (ind == 1) then
 			cdCache[enemyName][ind]:SetPoint("CENTER", plateFrame, Icicle.Settings.xoff, Icicle.Settings.yoff)
