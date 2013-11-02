@@ -294,7 +294,7 @@ end
 local function storeCooldown(enemyName, spellId, spellName)
 	local icon = getFrame()
 	setColor(icon, spellId, spellName)
-	local duration = Icicle.Cooldowns[spellId]
+	local duration = Icicle.Cooldowns[spellId].cd
 	icon.texture:SetTexture(select(3, GetSpellInfo(spellId)))
 	icon.texture:SetPoint("CENTER", icon)
 	icon.endtime = GetTime() + duration
@@ -315,14 +315,16 @@ end
 local function sortLog(frame, event, ...)
 	local _, eventType, _, _, srcName, srcFlags, _, _, _, _, _, spellId, spellName = ...
 	if Icicle.Cooldowns[spellId] and bit.band(srcFlags, COMBATLOG_OBJECT_REACTION_HOSTILE) ~= 0 then
-		local enemyName = strmatch(srcName, "[%P]+")
-		if (not throttle[enemyName]) then throttle[enemyName] = {} end
-		if (throttle[enemyName][spellName] and (throttle[enemyName][spellName] + 1) > GetTime()) then return end
-		throttle[enemyName][spellName] = GetTime()
-		if (eventType == "SPELL_CAST_SUCCESS" or eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_MISSED" or eventType == "SPELL_SUMMON") then
-			storeCooldown(enemyName, spellId, spellName)
-			if (not IciclePlates:IsVisible()) then
-				IciclePlates:Show()
+		if Icicle.Cooldowns[spellId].enabled then
+			local enemyName = strmatch(srcName, "[%P]+")
+			if (not throttle[enemyName]) then throttle[enemyName] = {} end
+			if (throttle[enemyName][spellName] and (throttle[enemyName][spellName] + 1) > GetTime()) then return end
+			throttle[enemyName][spellName] = GetTime()
+			if (eventType == "SPELL_CAST_SUCCESS" or eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_MISSED" or eventType == "SPELL_SUMMON") then
+				storeCooldown(enemyName, spellId, spellName)
+				if (not IciclePlates:IsVisible()) then
+					IciclePlates:Show()
+				end
 			end
 		end
 	end

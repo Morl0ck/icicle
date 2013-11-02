@@ -46,7 +46,7 @@ local cooldowns = {
 		[48792] = 180,              --Icebound Fortitude
 		[108201] = 120,				--Desecrated Ground
 		[47528] = 15,				--Mind Freeze
-		[108194] = 60,			 	--Asphxiate
+		[108194] = 30,			 	--Asphxiate
 		[49576] = 25,				--Death Grip
 		[47476] = 120, 				--Strangulate
 		[108200] = 60, 				--Remorseless Winter
@@ -78,7 +78,7 @@ local cooldowns = {
 		[108921] = 45, 				--Psyfiend
 		[605] = 30, 				--Dominate Mind
 	},
-	["Driud"] = {
+	["Druid"] = {
 		[49376] = 15,				--Wild Charge
 		[50334] = 180,				--Berserk
 		[102280] = 30,				--Displacer Beast
@@ -154,7 +154,7 @@ local cooldowns = {
 	    [3045] = 180,               --Rapid Fire
 	    [121818] = 300,             --Stampede
 		[1499] = 30,				--Freezing Trap
-		[23989] = 300, 				--Readiness
+		--[23989] = 300, 				--Readiness removed
 		[19574] = 60, 				--Bestial Wrath
 		[34490] = 20, 				--Silencing Shot
 		[19386] = 60, 				--Wyvern Sting
@@ -188,7 +188,7 @@ local cooldowns = {
 		[114028] = 60, 				--Mass Spell Reflection
 		[107574] = 180, 			--Avatar
 		[12292] = 60, 				--Bloodbath
-		[100] = 20, 				--Charge
+		--[100] = 20, 				--Charge
 		[6552] = 15, 				--Pummel
 		[23920] = 20, 				--Spell Reflection
 		[118038] = 120,				--Die by the sword
@@ -387,22 +387,24 @@ local function showOpts(OptionsGen)
 	fontOpt:SetPoint("TOP", 15, -30)
 	
 	UIDropDownMenu_Initialize(fontOpt, fontInit)
-	
+
 	for key, val in orderedpairs(cooldowns) do
 		if (key ~= "Misc") then
 			local classOpt = CreateFrame("Frame")
 			classOpt.name = key
 			classOpt.parent = addonName
-		
-			classOpt:SetScript("OnShow", classLab)
-			InterfaceOptions_AddCategory(classOpt, OptionsGen)
+
+			InterfaceOptions_AddCategory(classOpt)
 		
 			local ind = 1
+			local xOffset=0
 			for key, val in pairs(val) do
+				if (ind==12) then ind=13 end
+				if (ind>12) then xOffset = 250 end
 				classOpt.Abi = createIcon(key, 36)
 				classOpt.Abi:Show()
 				classOpt.Abi:SetParent(classOpt)
-				classOpt.Abi:SetPoint("TOPLEFT", 15, ind * -45 + 35)
+				classOpt.Abi:SetPoint("TOPLEFT", xOffset+15, (ind % 12) * -45 + 35)
 				classOpt.Abi:SetScript("OnEnter", function()
 					GameTooltip:SetOwner(classOpt.Abi, "ANCHOR_CURSOR");
 					GameTooltip:SetSpellByID(key)
@@ -412,17 +414,17 @@ local function showOpts(OptionsGen)
 				GameTooltip:Hide()
 				end)
 				classOpt.lab = createLabel(classOpt, select(1, GetSpellInfo(key)))
-				classOpt.lab:SetPoint("TOPLEFT", 60, ind * -45 + 12)
+				classOpt.lab:SetPoint("TOPLEFT", xOffset+60, (ind % 12) * -45 + 12)
 				classOpt.chk = createCheck(classOpt, key, 20, 20)
-				classOpt.chk:SetPoint("TOPLEFT", 60, ind * -45 + 35)
-				if (IcicleVars.Cooldowns[key]) then
+				classOpt.chk:SetPoint("TOPLEFT", xOffset+60, (ind % 12) * -45 + 35)
+				if (IcicleVars.CooldownsMD[key]) then
 					classOpt.chk:SetChecked()
 				end
 				classOpt.chk:SetScript("OnClick", function()
-					if (IcicleVars.Cooldowns[key]) then
-						IcicleVars.Cooldowns[key] = nil
+					if (IcicleVars.CooldownsMD[key]) then
+						IcicleVars.CooldownsMD[key] = false
 					else
-						tinsert(IcicleVars.Cooldowns, key, val)
+						tinsert(IcicleVars.CooldownsMD, key, true)
 					end
 				end)
 				ind = ind + 1
@@ -448,23 +450,19 @@ local function showOpts(OptionsGen)
 		OptionsGen.lab:SetPoint("BOTTOMLEFT", 60, ind * 60 - 34)
 		OptionsGen.chk = createCheck(OptionsGen, key, 20, 20)
 		OptionsGen.chk:SetPoint("BOTTOMLEFT", 60, ind * 60 - 18)
-		if (IcicleVars.Cooldowns[key]) then
+		if (IcicleVars.CooldownsMD[key]) then
 			OptionsGen.chk:SetChecked()
 		end
 		OptionsGen.chk:SetScript("OnClick", function()
-			if (IcicleVars.Cooldowns[key]) then
-				IcicleVars.Cooldowns[key] = nil
+			if (IcicleVars.CooldownsMD[key]) then
+				IcicleVars.CooldownsMD[key] = false
 			else
-				tinsert(IcicleVars.Cooldowns, key, val)
+				tinsert(IcicleVars.CooldownsMD, key, true)
 			end
 		end)
 		ind = ind + 1
 	end
-	
-	OptionsGen:SetScript("OnShow", nil)
 end
-
-OptionsGen:SetScript("OnShow", showOpts)
 InterfaceOptions_AddCategory(OptionsGen)
 --------------------------------
 --// Initialize icicle.
@@ -478,15 +476,29 @@ local function initVars()
 		IcicleVars = {}
 		IcicleVars.Settings = {}
 		IcicleVars.Settings = Settings
-		IcicleVars.Cooldowns = {}
-		for key, val in pairs(cooldowns) do
-			for key, val in pairs(val) do
-				tinsert(IcicleVars.Cooldowns, key, val)
+	end
+		
+	if not IcicleVars.CooldownsMD then --migrate old saved vars
+		IcicleVars.CooldownsMD = {}
+	end
+	for key, val in pairs(cooldowns) do
+		for key, val in pairs(val) do
+			if IcicleVars.CooldownsMD[key]==nil then
+				tinsert(IcicleVars.CooldownsMD, key, true)
 			end
 		end
 	end
+
 	Icicle.Settings = IcicleVars.Settings
-	Icicle.Cooldowns = IcicleVars.Cooldowns
+	Icicle.Cooldowns = {}
+	for key, val in pairs(cooldowns) do
+		for key, val in pairs(val) do
+			local t={}
+			t.enabled = IcicleVars.CooldownsMD[key]
+			t.cd=val
+			tinsert(Icicle.Cooldowns, key, t)
+		end
+	end
 end
 
 local function onEvent(frame, event, arg)
@@ -505,6 +517,7 @@ local function onEvent(frame, event, arg)
 		end
 		table.sort(Icicle.fonts)
 		LSM.RegisterCallback(frame, "LibSharedMedia_Registered", updateMedia)
+		showOpts(OptionsGen)
 	end
 end
 
