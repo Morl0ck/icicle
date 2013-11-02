@@ -388,6 +388,7 @@ local function showOpts(OptionsGen)
 	
 	UIDropDownMenu_Initialize(fontOpt, fontInit)
 
+--CLASS OPTIONS
 	for key, val in orderedpairs(cooldowns) do
 		if (key ~= "Misc") then
 			local classOpt = CreateFrame("Frame")
@@ -399,7 +400,7 @@ local function showOpts(OptionsGen)
 			local ind = 1
 			local xOffset=0
 			for key, val in pairs(val) do
-				if (ind==12) then ind=13 end
+				if (ind==12) then ind=13 end       ---SET TO 13 for  1 modulo 12 =1
 				if (ind>12) then xOffset = 250 end
 				classOpt.Abi = createIcon(key, 36)
 				classOpt.Abi:Show()
@@ -432,6 +433,7 @@ local function showOpts(OptionsGen)
 		end	
 	end
 
+--PVP TRINKET ICONS
 	local ind = 1
 	for key, val in pairs(cooldowns.Misc) do
 		OptionsGen.Abi = createIcon(key, 36)
@@ -505,10 +507,6 @@ local function onEvent(frame, event, arg)
 	if (event == "ADDON_LOADED") then
 		if (arg ~= "Icicle") then return end
 		initVars()
-		SLASH_ICICLE1 = "/icicle"
-		function SlashCmdList.ICICLE()
-			InterfaceOptionsFrame_OpenToCategory(addonName)
-		end
 		frame:UnregisterEvent("ADDON_LOADED")
 	elseif (event == "VARIABLES_LOADED") then
 		initCore()
@@ -527,3 +525,7 @@ IcicleOpts:RegisterEvent("ADDON_LOADED")
 IcicleOpts:RegisterEvent("VARIABLES_LOADED")
 --------------------------------
 --------------------------------
+SlashCmdList["ICICLE"] = function() InterfaceOptionsFrame_OpenToCategory(addonName) end
+SLASH_ICICLE1 = "/icicle"
+
+
