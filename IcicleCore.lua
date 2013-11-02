@@ -1,4 +1,4 @@
---------------------------------
+--HookScript--------------------------------
 --// Icicle.
 --------------------------------
 local addon = {}
@@ -77,12 +77,17 @@ local function addIcons(enemyName, plateFrame)
 	end
 end
 
+--Removes (*) from player name (X-Realm)
+local function getPlayerName(name)
+	return string.gsub(name,"%s%(%*%)","")
+end
+
 --// Check visible nameplates.
 local function visPlate(enemyName)
 	for key, val in ipairs(plateCache) do
 		local _, f2 = val:GetChildren()
 		local getName = f2:GetRegions()
-		if (getName:GetText() == enemyName) then
+		if (getPlayerName(getName:GetText()) == enemyName) then
 			if (val:IsVisible()) then
 				addIcons(enemyName, val)
 				return
@@ -103,7 +108,7 @@ local function onShow(plateFrame)
 	local _, f2 = plateFrame:GetChildren()
 	local getName = f2:GetRegions()
 	
-	local enemyName = getName:GetText()
+	local enemyName = getPlayerName(getName:GetText())
 	if (cdCache[enemyName]) then
 		addIcons(enemyName, plateFrame)
 	end
@@ -114,7 +119,7 @@ local function hideIcon(plateFrame)
 	local _, f2 = plateFrame:GetChildren()
 	local getName = f2:GetRegions()
 	
-	local enemyName = getName:GetText()
+	local enemyName = getPlayerName(getName:GetText())
 	if (cdCache[enemyName]) then
 		for ind = 1, #cdCache[enemyName] do
 			cdCache[enemyName][ind]:Hide()
@@ -142,7 +147,7 @@ local function getNameplates(...)
 					if (plateFrame:IsVisible()) then
 						local _, f2 = plateFrame:GetChildren()
 						local getName = f2:GetRegions()
-						local enemyName = getName:GetText()
+						local enemyName = getPlayerName(getName:GetText())
 						if (cdCache[enemyName]) then
 							addIcons(enemyName, plateFrame)
 						end
@@ -347,3 +352,18 @@ IcicleEvents:SetScript("OnEvent", onEvent)
 addon.enAble = enAble
 --------------------------------
 --------------------------------
+--DEBUG
+
+function dump(o)
+	if type(o) == 'table' then
+		local s = '{ '
+		for k,v in pairs(o) do
+			if type(k) ~= 'number' then k = '"'..k..'"' end
+			s = s .. '['..k..'] = ' .. dump(v) .. ','
+		end
+		return s .. '} '
+	else
+		return tostring(o)
+	end
+end
+
