@@ -158,7 +158,7 @@ local cooldowns = {
 		[30283] = 30,				--"Shadowfury",
 		[6789] = 45,				--"Mortal Coil",
 		[5484] = 40,				--"Howl of Terror",
-		[48020] = 30,				--"Demonic Circle: Teleport",
+		[48020] = 25,				--"Demonic Circle: Teleport",
 		[104773] = 180,             --Unending Resolve
 	},
 	["Hunter"] = {
@@ -237,6 +237,7 @@ end
 --// Create options frame.
 local OptionsGen = CreateFrame("Frame", nil, InterfaceOptionsFrame)
 OptionsGen.name = addonName
+--OptionsGen.okay = function (self) refreshCooldowns() end
 OptionsGen:Hide()
 
 local function createLabel(frame, name)
@@ -438,8 +439,10 @@ local function showOpts(OptionsGen)
 				classOpt.chk:SetScript("OnClick", function()
 					if (IcicleVars.CooldownsMD[key]) then
 						IcicleVars.CooldownsMD[key] = false
+						Icicle.Cooldowns[key].enabled = false
 					else
-						tinsert(IcicleVars.CooldownsMD, key, true)
+						IcicleVars.CooldownsMD[key] = true
+						Icicle.Cooldowns[key].enabled = true
 					end
 				end)
 				ind = ind + 1
@@ -472,8 +475,10 @@ local function showOpts(OptionsGen)
 		OptionsGen.chk:SetScript("OnClick", function()
 			if (IcicleVars.CooldownsMD[key]) then
 				IcicleVars.CooldownsMD[key] = false
+				Icicle.Cooldowns[key].enabled = false
 			else
-				tinsert(IcicleVars.CooldownsMD, key, true)
+				IcicleVars.CooldownsMD[key] = true
+				Icicle.Cooldowns[key].enabled = true
 			end
 		end)
 		ind = ind + 1
@@ -483,6 +488,17 @@ InterfaceOptions_AddCategory(OptionsGen)
 --------------------------------
 --// Initialize icicle.
 --------------------------------
+local function refreshCooldowns()  
+	for key, val in pairs(cooldowns) do
+		for key, val in pairs(val) do
+			local t={}
+			t.enabled = IcicleVars.CooldownsMD[key]
+			t.cd=val
+			tinsert(Icicle.Cooldowns, key, t)
+		end
+	end
+end
+
 local function initCore()
 	Icicle.Core.enAble()
 end
@@ -507,14 +523,7 @@ local function initVars()
 
 	Icicle.Settings = IcicleVars.Settings
 	Icicle.Cooldowns = {}
-	for key, val in pairs(cooldowns) do
-		for key, val in pairs(val) do
-			local t={}
-			t.enabled = IcicleVars.CooldownsMD[key]
-			t.cd=val
-			tinsert(Icicle.Cooldowns, key, t)
-		end
-	end
+	refreshCooldowns()
 end
 
 local function onEvent(frame, event, arg)
