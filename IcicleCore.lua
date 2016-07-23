@@ -105,29 +105,6 @@ local function isNameplateVisible(enemyName)
 	wipe(cdCache)
 end
 
--- --// Nameplate OnShow function.
--- local function onShow(plateFrame)
--- 	local unitFrame = plateFrame.UnitFrame
--- 	local enemyName = GetUnitName(unitFrame.unit, false)
--- 	print(enemyName)
--- 	if (cdCache[enemyName]) then
--- 		addIcons(enemyName, plateFrame)
--- 	end
--- end
-
--- --// Nameplate OnHide function.
--- local function hideIcon(plateFrame)
--- 	local unitFrame = plateFrame.UnitFrame
--- 	local enemyName = GetUnitName(unitFrame.unit, false)
--- 	print(enemyName)
--- 	if (cdCache[enemyName]) then
--- 		for ind = 1, #cdCache[enemyName] do
--- 			cdCache[enemyName][ind]:Hide()
--- 			cdCache[enemyName][ind]:SetParent(nil)
--- 		end
--- 	end
--- end
-
 function has_value(tab, val)
     for index, value in ipairs (tab) do
         if value == val then
@@ -163,34 +140,6 @@ local function onHideUnit(unit)
 		end
 	end
 end
-
---// Cache and setup new nameplates.
--- function getNameplates(...)
--- 	-- for ind = 1, select("#", ...) do
--- 	-- 	table.foreach(ind, print)
--- 	-- 	local plateFrame = select(ind, ...)
--- 	-- 	table.foreach(plateFrame, print)
--- 	for _, plateFrame in pairs(...) do
--- 		-- table.foreach(plateFrame, print)
--- 		if (plateFrame:GetName()) then
--- 			local isFrame = plateFrame:GetName()
--- 			if (isFrame:find("NamePlate")) then
--- 				if (not plateFrame.icicle) then
--- 					plateFrame.icicle = 1
--- 					tinsert(plateCache, plateFrame)
--- 					if (plateFrame:IsVisible()) then
--- 						local unitFrame = plateFrame.UnitFrame
--- 						local enemyName = GetUnitName(unitFrame.unit, false)
--- 						--print(enemyName)
--- 						if (cdCache[enemyName]) then
--- 							addIcons(enemyName, plateFrame)
--- 						end
--- 					end
--- 				end
--- 			end
--- 		end
--- 	end
--- end
 
 --// Check for expired cooldowns.
 local function checkTable()
