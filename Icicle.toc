@@ -1,9 +1,10 @@
-## Interface: 50400
+## Interface: 70000
 ## Title: Icicle
 ## SavedVariables: IcicleVars
 ## OptionalDeps: LibSharedMedia-3.0, Tidy Plates
 ## Version: 1.0
 ## Author: thoth
+## Contributor: morl0ck
 ## Notes: Enemy cooldowns on nameplates.
 Libs\LibStub.lua
 Libs\CallbackHandler-1.0.lua
