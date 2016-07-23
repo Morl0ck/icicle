@@ -50,10 +50,10 @@ local downieResets = {
 --------------------------------
 local IcicleEvents
 local IciclePlates
-local cdCache = {}
+cdCache = {}
 local throttle = {}
 local iconCache = {}
-local plateCache = {}
+plateCache = {}
 local next = next
 --------------------------------
 --// Core.
@@ -78,17 +78,19 @@ local function addIcons(enemyName, plateFrame)
 end
 
 --Removes (*) from player name (X-Realm)
-local function getPlayerName(name)
+function getPlayerName(name)
 	return string.gsub(name,"%s%(%*%)","")
 end
 
 --// Check visible nameplates.
-local function visPlate(enemyName)
+local function isNameplateVisible(enemyName)
+	-- print('isNameplateVisible: looping through', #plateCache, 'values in plateCache')
 	for key, val in ipairs(plateCache) do
-		local _, f2 = val:GetChildren()
-		local getName = f2:GetRegions()
-		if (getPlayerName(getName:GetText()) == enemyName) then
-			if (val:IsVisible()) then
+		-- print('isNameplateVisible: checking if', enemyName, 'is visible')
+		if (val:IsVisible()) then
+			local eName = getPlayerName(GetUnitName(val.UnitFrame.unit, false))
+			if (eName == enemyName) then
+				-- print('isNameplateVisible: found', enemyName, 'in plateCache')
 				addIcons(enemyName, val)
 				return
 			end
@@ -103,23 +105,57 @@ local function visPlate(enemyName)
 	wipe(cdCache)
 end
 
+-- --// Nameplate OnShow function.
+-- local function onShow(plateFrame)
+-- 	local unitFrame = plateFrame.UnitFrame
+-- 	local enemyName = GetUnitName(unitFrame.unit, false)
+-- 	print(enemyName)
+-- 	if (cdCache[enemyName]) then
+-- 		addIcons(enemyName, plateFrame)
+-- 	end
+-- end
+
+-- --// Nameplate OnHide function.
+-- local function hideIcon(plateFrame)
+-- 	local unitFrame = plateFrame.UnitFrame
+-- 	local enemyName = GetUnitName(unitFrame.unit, false)
+-- 	print(enemyName)
+-- 	if (cdCache[enemyName]) then
+-- 		for ind = 1, #cdCache[enemyName] do
+-- 			cdCache[enemyName][ind]:Hide()
+-- 			cdCache[enemyName][ind]:SetParent(nil)
+-- 		end
+-- 	end
+-- end
+
+function has_value(tab, val)
+    for index, value in ipairs (tab) do
+        if value == val then
+            return true
+        end
+    end
+    return false
+end
+
+local function onNamePlateCreated(plateFrame)
+	-- print('onNamePlateCreated: plateFrame exists in plateCache:', has_value(plateCache, plateFrame))
+	if not has_value(plateCache, plateFrame) then
+		tinsert(plateCache, plateFrame)
+	end
+end
+
 --// Nameplate OnShow function.
-local function onShow(plateFrame)
-	local _, f2 = plateFrame:GetChildren()
-	local getName = f2:GetRegions()
-	
-	local enemyName = getPlayerName(getName:GetText())
+local function onShowUnit(unit)
+	local enemyName = getPlayerName(GetUnitName(unit, false))
+	local plateFrame = C_NamePlate.GetNamePlateForUnit(unit);
 	if (cdCache[enemyName]) then
 		addIcons(enemyName, plateFrame)
 	end
 end
 
 --// Nameplate OnHide function.
-local function hideIcon(plateFrame)
-	local _, f2 = plateFrame:GetChildren()
-	local getName = f2:GetRegions()
-	
-	local enemyName = getPlayerName(getName:GetText())
+local function onHideUnit(unit)
+	local enemyName = getPlayerName(GetUnitName(unit, false))
 	if (cdCache[enemyName]) then
 		for ind = 1, #cdCache[enemyName] do
 			cdCache[enemyName][ind]:Hide()
@@ -129,34 +165,32 @@ local function hideIcon(plateFrame)
 end
 
 --// Cache and setup new nameplates.
-local function getNameplates(...)
-	for ind = 1, select("#", ...) do
-		local plateFrame = select(ind, ...)
-		if (plateFrame:GetName()) then
-			local isFrame = plateFrame:GetName()
-			if (isFrame:find("NamePlate")) then
-				if (not plateFrame.icicle) then
-					plateFrame.icicle = 0
-					tinsert(plateCache, plateFrame)
-					plateFrame:HookScript("OnShow", function()
-						onShow(plateFrame)
-					end)
-					plateFrame:HookScript("OnHide", function()
-						hideIcon(plateFrame)
-					end)
-					if (plateFrame:IsVisible()) then
-						local _, f2 = plateFrame:GetChildren()
-						local getName = f2:GetRegions()
-						local enemyName = getPlayerName(getName:GetText())
-						if (cdCache[enemyName]) then
-							addIcons(enemyName, plateFrame)
-						end
-					end
-				end
-			end
-		end
-	end
-end
+-- function getNameplates(...)
+-- 	-- for ind = 1, select("#", ...) do
+-- 	-- 	table.foreach(ind, print)
+-- 	-- 	local plateFrame = select(ind, ...)
+-- 	-- 	table.foreach(plateFrame, print)
+-- 	for _, plateFrame in pairs(...) do
+-- 		-- table.foreach(plateFrame, print)
+-- 		if (plateFrame:GetName()) then
+-- 			local isFrame = plateFrame:GetName()
+-- 			if (isFrame:find("NamePlate")) then
+-- 				if (not plateFrame.icicle) then
+-- 					plateFrame.icicle = 1
+-- 					tinsert(plateCache, plateFrame)
+-- 					if (plateFrame:IsVisible()) then
+-- 						local unitFrame = plateFrame.UnitFrame
+-- 						local enemyName = GetUnitName(unitFrame.unit, false)
+-- 						--print(enemyName)
+-- 						if (cdCache[enemyName]) then
+-- 							addIcons(enemyName, plateFrame)
+-- 						end
+-- 					end
+-- 				end
+-- 			end
+-- 		end
+-- 	end
+-- end
 
 --// Check for expired cooldowns.
 local function checkTable()
@@ -166,7 +200,7 @@ local function checkTable()
 				icon:Hide()
 				icon:SetParent(nil)
 				tremove(cdCache[key], ind)
-				visPlate(key)
+				isNameplateVisible(key)
 				tinsert(iconCache, icon)
 			end
 		end
@@ -177,17 +211,12 @@ end
 IciclePlates = CreateFrame("Frame")
 IciclePlates:Hide()
 
-local numChild = 0
 local getUpdate = 0
 IciclePlates:SetScript("OnUpdate", function(frame, elapsed)
 	getUpdate = getUpdate + elapsed
-	if (getUpdate > .33) then
+	if (getUpdate > 0.33) then
 		getUpdate = 0
 		checkTable()
-		if (WorldFrame:GetNumChildren() ~= numChild) then
-			numChild = WorldFrame:GetNumChildren()
-			getNameplates(WorldFrame:GetChildren())
-		end
 	end
 end)
 
@@ -261,7 +290,7 @@ local function cleanUp(enemyName, icon, ind)
 	icon:Hide()
 	icon:SetParent(nil)
 	tremove(cdCache[enemyName], ind)
-	visPlate(enemyName)
+	isNameplateVisible(enemyName)
 	tinsert(iconCache, icon)
 end
 
@@ -292,6 +321,7 @@ end
 
 --// Prepare icon for use.
 local function storeCooldown(enemyName, spellId, spellName)
+	-- print('storeCooldown: ', enemyName, spellName)
 	local icon = getFrame()
 	setColor(icon, spellId, spellName)
 	local duration = Icicle.Cooldowns[spellId].cd
@@ -306,7 +336,7 @@ local function storeCooldown(enemyName, spellId, spellName)
 	checkIcons(enemyName, spellId, spellName)
 	icon:Hide()
 	tinsert(cdCache[enemyName], icon)
-	visPlate(enemyName)
+	isNameplateVisible(enemyName)
 end
 
 --------------------------------
@@ -322,6 +352,7 @@ local function sortLog(frame, event, ...)
 			throttle[enemyName][spellName] = GetTime()
 			if (eventType == "SPELL_CAST_SUCCESS" or eventType == "SPELL_AURA_APPLIED" or eventType == "SPELL_MISSED" or eventType == "SPELL_SUMMON") then
 				storeCooldown(enemyName, spellId, spellName)
+				--print(spellName)
 				if (not IciclePlates:IsVisible()) then
 					IciclePlates:Show()
 				end
@@ -335,6 +366,15 @@ local function onEvent(frame, event, ...)
 		sortLog(frame, event, ...)
 	elseif (event == "PLAYER_ENTERING_WORLD") then
 		wipe(throttle)
+	elseif ( event == "NAME_PLATE_CREATED" ) then 
+		local namePlate = ...;
+		onNamePlateCreated(namePlate);
+	elseif ( event == "NAME_PLATE_UNIT_ADDED" ) then 
+		local unit = ...;
+		onShowUnit(unit);
+	elseif ( event == "NAME_PLATE_UNIT_REMOVED" ) then 
+		local unit = ...;
+		onHideUnit(unit);
 	end
 end
 
@@ -342,6 +382,9 @@ end
 local function enAble()
 	IcicleEvents:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 	IcicleEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
+	IcicleEvents:RegisterEvent("NAME_PLATE_CREATED")
+	IcicleEvents:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+	IcicleEvents:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
 	IcicleEvents:Show()
 	Settings = Icicle.Settings
 	Cooldowns = Icicle.Cooldowns
@@ -368,4 +411,3 @@ function dump(o)
 		return tostring(o)
 	end
 end
-
